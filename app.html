@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Shashka & Shaxmat Gaming Arena</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<style>
+:root{
+    --bg:#0b0e17; --card:#131826; --card2:#1a2133; --accent:#ffb020; --accent2:#5b7fff;
+    --text:#eef1f8; --muted:#8992a9; --green:#3ddc84; --red:#ff5c5c; --border:#242c42;
+  }
+html,body{margin:0;padding:0;background:var(--bg);}
+
+/* ==== Ilova almashtirish (Player <-> Admin) uchun asosiy konteynerlar ==== */
+#playerRoot, #adminRoot { min-height: 100vh; }
+#playerRoot.app-hidden, #adminRoot.app-hidden { display: none !important; }
+.admin-entry-link{
+  position:fixed; bottom:6px; right:10px; font-size:10px; color:#4a5170;
+  text-decoration:none; z-index:5; letter-spacing:.05em; opacity:.5;
+}
+.admin-entry-link:hover{ opacity:1; color:#8992a9; }
+
+/* ============================ O'YINCHI (Player) WebApp uslublari ============================ */
+#playerRoot *{box-sizing:border-box;}
+#playerRoot{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:radial-gradient(circle at top,#161d31 0%,var(--bg) 60%);color:var(--text);min-height:100vh;padding-bottom:90px;}
+#playerRoot .screen{display:none;animation:fadeIn .25s ease;}
+#playerRoot .screen.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+#playerRoot header.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;position:sticky;top:0;
+    background:rgba(11,14,23,.9);backdrop-filter:blur(10px);z-index:20;border-bottom:1px solid var(--border);}
+#playerRoot .brand{font-weight:800;font-size:18px;display:flex;align-items:center;gap:8px;}
+#playerRoot .balance-pill{display:flex;gap:8px;}
+#playerRoot .pill{background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;display:flex;gap:5px;align-items:center;}
+#playerRoot main{padding:16px;max-width:520px;margin:0 auto;}
+#playerRoot .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px;}
+#playerRoot .card h3{margin:0 0 10px;font-size:15px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+#playerRoot .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+#playerRoot .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+#playerRoot .btn{background:linear-gradient(135deg,var(--accent),#ff8a00);color:#1a1200;border:none;border-radius:14px;
+    padding:13px 16px;font-weight:800;font-size:14px;cursor:pointer;width:100%;transition:.15s;}
+#playerRoot .btn:active{transform:scale(.97);}
+#playerRoot .btn.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+#playerRoot .btn.blue{background:linear-gradient(135deg,var(--accent2),#3b57cf);color:#fff;}
+#playerRoot .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent);}
+#playerRoot .btn:disabled{opacity:.5;cursor:not-allowed;}
+#playerRoot input, #playerRoot textarea{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;
+    color:var(--text);padding:12px 14px;font-size:15px;margin-bottom:10px;}
+#playerRoot input::placeholder{color:var(--muted);}
+#playerRoot .otp-inputs{display:flex;gap:8px;justify-content:center;margin:18px 0;}
+#playerRoot .otp-inputs input{width:44px;height:54px;text-align:center;font-size:22px;font-weight:800;margin:0;padding:0;}
+#playerRoot .game-tile{background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:14px;text-align:center;cursor:pointer;transition:.15s;}
+#playerRoot .game-tile:active{transform:scale(.96);}
+#playerRoot .game-tile .emoji{font-size:32px;margin-bottom:6px;}
+#playerRoot .game-tile .name{font-weight:700;font-size:13px;}
+#playerRoot .game-tile .soon{font-size:10px;color:var(--muted);margin-top:2px;}
+#playerRoot .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(19,24,38,.97);backdrop-filter:blur(10px);
+    border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:10px 6px calc(10px + env(safe-area-inset-bottom));z-index:20;}
+#playerRoot .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;padding:4px 10px;border-radius:10px;}
+#playerRoot .nav-item.active{color:var(--accent);background:rgba(255,176,32,.1);}
+#playerRoot .nav-item .ic{font-size:19px;}
+#playerRoot .hidden{display:none !important;}
+#playerRoot .row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
+#playerRoot .row:last-child{border-bottom:none;}
+#playerRoot .muted{color:var(--muted);font-size:13px;}
+#playerRoot .center{text-align:center;}
+#playerRoot .logo-big{font-size:56px;margin-bottom:6px;}
+#playerRoot .title-big{font-size:22px;font-weight:800;margin:6px 0 4px;}
+#playerRoot .board{display:grid;grid-template-columns:repeat(8,1fr);gap:0;width:100%;max-width:400px;margin:0 auto;
+    border:3px solid var(--border);border-radius:10px;overflow:hidden;}
+#playerRoot .cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;}
+#playerRoot .cell.light{background:#3a4360;}
+#playerRoot .cell.dark{background:#232a3f;}
+#playerRoot .cell.selected{outline:3px solid var(--accent) inset;}
+#playerRoot .cell.hint::after{content:'';width:22%;height:22%;border-radius:50%;background:rgba(61,220,132,.6);position:absolute;}
+#playerRoot .piece{width:72%;height:72%;border-radius:50%;box-shadow:0 3px 6px rgba(0,0,0,.4);}
+#playerRoot .piece.p1{background:radial-gradient(circle at 35% 30%,#fff,#d6dbe8 60%,#9aa3bd);}
+#playerRoot .piece.p2{background:radial-gradient(circle at 35% 30%,#5a6483,#2c3450 60%,#151a2b);}
+#playerRoot .piece.king::after{content:'♛';position:absolute;font-size:14px;}
+#playerRoot .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border);
+    padding:10px 18px;border-radius:12px;font-size:13px;z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.4);}
+#playerRoot .xo-board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:0 auto;}
+#playerRoot .xo-cell{aspect-ratio:1;background:var(--card2);border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-size:34px;font-weight:900;cursor:pointer;border:1px solid var(--border);}
+#playerRoot .rps-choices{display:flex;gap:12px;justify-content:center;margin:16px 0;}
+#playerRoot .rps-choices button{font-size:34px;background:var(--card2);border:1px solid var(--border);border-radius:16px;padding:14px 18px;cursor:pointer;}
+#playerRoot .ad-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;padding:20px;text-align:center;}
+#playerRoot .ad-overlay img, #playerRoot .ad-overlay video{max-width:100%;max-height:60vh;border-radius:12px;margin-bottom:16px;}
+#playerRoot .ad-timer{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.15);border-radius:999px;padding:6px 14px;font-weight:700;}
+#playerRoot .badge-live{background:var(--green);color:#06231a;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;}
+/* ============================ ADMIN PANEL uslublari ============================ */
+#adminRoot *{box-sizing:border-box;}
+#adminRoot{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+#adminRoot .center-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+#adminRoot .login-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 28px;max-width:360px;width:100%;text-align:center;}
+#adminRoot .login-card .logo{font-size:44px;margin-bottom:8px;}
+#adminRoot input{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:12px;color:var(--text);
+    padding:13px 14px;font-size:15px;margin:8px 0;}
+#adminRoot .btn{background:linear-gradient(135deg,var(--accent),#ff8a00);color:#1a1200;border:none;border-radius:12px;
+    padding:12px 16px;font-weight:800;font-size:14px;cursor:pointer;width:100%;}
+#adminRoot .btn.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+#adminRoot .btn.danger{background:linear-gradient(135deg,#ff5c5c,#c73b3b);color:#fff;}
+#adminRoot .btn.green{background:linear-gradient(135deg,#3ddc84,#1fa864);color:#06231a;}
+#adminRoot .btn.small{width:auto;padding:7px 12px;font-size:12px;}
+#adminRoot .err{color:var(--red);font-size:13px;margin-top:6px;min-height:16px;}
+#adminRoot #adminApp{display:none;}
+#adminRoot .layout{display:flex;min-height:100vh;}
+#adminRoot .sidebar{width:230px;background:var(--card);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;}
+#adminRoot .sidebar .brand{font-weight:800;font-size:16px;margin-bottom:22px;padding:0 8px;display:flex;gap:8px;align-items:center;}
+#adminRoot .nav-link{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;color:var(--muted);
+    font-weight:700;font-size:13px;cursor:pointer;margin-bottom:4px;}
+#adminRoot .nav-link:hover{background:var(--card2);}
+#adminRoot .nav-link.active{background:rgba(255,176,32,.12);color:var(--accent);}
+#adminRoot .content{flex:1;padding:26px 30px;max-width:1200px;}
+#adminRoot .page{display:none;}
+#adminRoot .page.active{display:block;}
+#adminRoot h1{font-size:22px;margin:0 0 20px;}
+#adminRoot .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:22px;}
+#adminRoot .kpi{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;}
+#adminRoot .kpi .label{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;}
+#adminRoot .kpi .value{font-size:26px;font-weight:800;margin-top:6px;}
+#adminRoot table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;}
+#adminRoot th, #adminRoot td{padding:11px 14px;text-align:left;font-size:13px;border-bottom:1px solid var(--border);}
+#adminRoot th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:11px;background:var(--card2);}
+#adminRoot tr:last-child td{border-bottom:none;}
+#adminRoot .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:18px;}
+#adminRoot .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+#adminRoot .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;}
+#adminRoot .badge.ok{background:rgba(61,220,132,.15);color:var(--green);}
+#adminRoot .badge.no{background:rgba(255,92,92,.15);color:var(--red);}
+#adminRoot select, #adminRoot textarea{background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px;font-size:13px;}
+#adminRoot .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+#adminRoot .searchbar{max-width:320px;}
+#adminRoot .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;}
+#adminRoot .modal-bg.active{display:flex;}
+#adminRoot .modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;max-width:380px;width:90%;}
+#adminRoot .modal h3{margin-top:0;}
+#adminRoot .ad-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+#adminRoot .ad-item:last-child{border-bottom:none;}
+#adminRoot .muted{color:var(--muted);font-size:12px;}
+@media (max-width:800px){#adminRoot .sidebar{position:fixed;left:-240px;transition:.2s;z-index:50;}
+#adminRoot .sidebar.open{left:0;}
+#adminRoot .content{padding:16px;}
+#adminRoot .menu-toggle{display:block !important;}}
+#adminRoot .menu-toggle{display:none;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);margin-bottom:14px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<a href="#admin" class="admin-entry-link" id="adminEntryLink">admin</a>
+
+<!-- ======================= O'YINCHI QISMI (WebApp) ======================= -->
+<div id="playerRoot">
+<div id="adOverlay" class="ad-overlay hidden">
+  <div class="ad-timer" id="adTimer">5</div>
+  <div id="adContent"></div>
+</div>
+
+<!-- ============ LOGIN / OTP SCREEN ============ -->
+<div id="screen-login" class="screen active">
+  <main style="padding-top:60px;">
+    <div class="center">
+      <div class="logo-big">♟️</div>
+      <div class="title-big">Shashka & Shaxmat<br>Gaming Arena</div>
+      <p class="muted">Xavfsiz kirish uchun Telegram orqali tasdiqlang</p>
+    </div>
+
+    <div class="card" style="margin-top:24px;">
+      <div id="loginStep1">
+        <p class="muted center">Telegram akkauntingiz aniqlandi. Kirish kodini olish uchun pastdagi tugmani bosing — kod botga yuboriladi.</p>
+        <div id="tgUserPreview" class="row" style="justify-content:center;gap:10px;"></div>
+        <button class="btn" id="btnRequestOtp">📩 Kirish kodini yuborish</button>
+        <p class="muted center" style="margin-top:10px;font-size:11px;">Kuniga maksimal 5 marta kod so'rash mumkin</p>
+      </div>
+      <div id="loginStep2" class="hidden">
+        <p class="muted center">Botga yuborilgan 5 xonali kodni kiriting:</p>
+        <div class="otp-inputs">
+          <input maxlength="1" inputmode="numeric" class="otp-d">
+          <input maxlength="1" inputmode="numeric" class="otp-d">
+          <input maxlength="1" inputmode="numeric" class="otp-d">
+          <input maxlength="1" inputmode="numeric" class="otp-d">
+          <input maxlength="1" inputmode="numeric" class="otp-d">
+        </div>
+        <button class="btn" id="btnVerifyOtp">✅ Tasdiqlash</button>
+        <button class="btn ghost" id="btnResendOtp" style="margin-top:10px;">🔁 Qayta yuborish</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="screen-app" class="screen">
+  <header class="topbar">
+    <div class="brand">♟️ Gaming Arena</div>
+    <div class="balance-pill">
+      <div class="pill">⭐️ <span id="hdrStars">0</span></div>
+      <div class="pill">🪙 <span id="hdrCoins">0</span></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HUB -->
+    <div id="tab-hub" class="tabpane">
+      <div class="card center">
+        <div class="muted" style="font-size:13px;">Xush kelibsiz,</div>
+        <div class="title-big" id="welcomeName" style="font-size:19px;">O'yinchi</div>
+      </div>
+
+      <div class="card">
+        <h3>🎮 O'yinlar</h3>
+        <div class="grid3">
+          <div class="game-tile" data-game="shashka"><div class="emoji">🔴</div><div class="name">Shashka</div><span class="badge-live">Live</span></div>
+          <div class="game-tile" data-game="xo"><div class="emoji">❌</div><div class="name">X/O</div><span class="badge-live">Live</span></div>
+          <div class="game-tile" data-game="rps"><div class="emoji">✂️</div><div class="name">Tosh-Qaychi</div><span class="badge-live">Live</span></div>
+          <div class="game-tile" data-soon="1"><div class="emoji">♞</div><div class="name">Shaxmat</div><div class="soon">To'liq versiya asosiy ilovada</div></div>
+          <div class="game-tile" data-soon="1"><div class="emoji">🕵️</div><div class="name">Mafiya</div><div class="soon">To'liq versiya asosiy ilovada</div></div>
+          <div class="game-tile" data-soon="1"><div class="emoji">🃏</div><div class="name">Durak</div><div class="soon">Tez kunda</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🏆 Faol turnirlar</h3>
+        <div id="tournamentsList"><p class="muted">Yuklanmoqda...</p></div>
+      </div>
+    </div>
+
+    <!-- PROFILE / ACCOUNT -->
+    <div id="tab-profile" class="tabpane hidden">
+      <div class="card center">
+        <div style="font-size:40px;">👤</div>
+        <div class="title-big" id="profName" style="font-size:18px;"></div>
+        <div class="muted" id="profUsername"></div>
+      </div>
+      <div class="card">
+        <h3>💰 Balans</h3>
+        <div class="row"><span>⭐️ Stars</span><b id="balStars">0</b></div>
+        <div class="row"><span>🪙 Coins</span><b id="balCoins">0</b></div>
+        <div class="row"><span>💵 Naqd balans</span><b id="balCash">0 so'm</b></div>
+        <button class="btn" style="margin-top:12px;" id="btnGoTopup">➕ Balansni to'ldirish</button>
+      </div>
+      <div class="card">
+        <h3>📊 Statistika</h3>
+        <div class="row"><span>🏆 G'alaba</span><b id="statWins">0</b></div>
+        <div class="row"><span>💔 Mag'lubiyat</span><b id="statLosses">0</b></div>
+        <div class="row"><span>🤝 Durang</span><b id="statDraws">0</b></div>
+        <div class="row"><span>⏱ O'ynalgan vaqt</span><b id="statTime">0 daq</b></div>
+      </div>
+      <div class="card">
+        <h3>👥 Referal tizim</h3>
+        <p class="muted">Har 12 ta taklif qilingan do'st uchun 1 ⭐️ Stars olasiz.</p>
+        <div class="row"><span>Taklif qilinganlar</span><b id="refCount">0</b></div>
+        <input id="refLink" readonly style="font-size:12px;">
+        <button class="btn secondary" id="btnCopyRef">📋 Havolani nusxalash</button>
+      </div>
+    </div>
+
+    <!-- TOPUP -->
+    <div id="tab-topup" class="tabpane hidden">
+      <div class="card">
+        <h3>➕ Balansni to'ldirish</h3>
+        <p class="muted">Balansni to'ldirish Telegram bot orqali amalga oshiriladi. Botni oching va "➕ Balans to'ldirish" tugmasini bosing.</p>
+        <button class="btn blue" id="btnOpenBotTopup">🤖 Botga o'tish</button>
+      </div>
+    </div>
+
+    <!-- GAME: SHASHKA -->
+    <div id="tab-shashka" class="tabpane hidden">
+      <div class="card">
+        <div class="row"><h3 style="margin:0;">🔴 Shashka (mahalliy 2 o'yinchi)</h3>
+          <button class="btn secondary" style="width:auto;padding:8px 14px;" id="btnShashkaReset">🔄</button>
+        </div>
+        <p class="muted center" id="shashkaTurn">Oq navbati</p>
+        <div class="board" id="shashkaBoard"></div>
+      </div>
+    </div>
+
+    <!-- GAME: XO -->
+    <div id="tab-xo" class="tabpane hidden">
+      <div class="card center">
+        <h3>❌⭕️ Krestiki-Noliki</h3>
+        <p class="muted" id="xoTurn">X navbati</p>
+        <div class="xo-board" id="xoBoard"></div>
+        <button class="btn secondary" style="margin-top:16px;" id="btnXoReset">🔄 Qayta boshlash</button>
+      </div>
+    </div>
+
+    <!-- GAME: RPS -->
+    <div id="tab-rps" class="tabpane hidden">
+      <div class="card center">
+        <h3>✊✋✌️ Tosh-Qog'oz-Qaychi</h3>
+        <p class="muted" id="rpsResult">Birini tanlang</p>
+        <div class="rps-choices">
+          <button data-c="rock">✊</button>
+          <button data-c="paper">✋</button>
+          <button data-c="scissors">✌️</button>
+        </div>
+        <div class="row"><span>Siz</span><b id="rpsWins">0</b></div>
+        <div class="row"><span>Bot</span><b id="rpsLosses">0</b></div>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-tab="hub"><div class="ic">🏠</div>Bosh sahifa</div>
+    <div class="nav-item" data-tab="profile"><div class="ic">👤</div>Profil</div>
+    <div class="nav-item" data-tab="topup"><div class="ic">➕</div>Balans</div>
+  </nav>
+</div>
+</div>
+
+<!-- ======================= ADMIN PANEL QISMI ======================= -->
+<div id="adminRoot" class="app-hidden">
+<!-- ============ LOGIN ============ -->
+<div id="loginScreen" class="center-screen">
+  <div class="login-card">
+    <div class="logo">🛠️</div>
+    <h2 style="margin:4px 0 2px;">Admin Panel</h2>
+    <p class="muted">Shashka & Shaxmat Gaming Arena</p>
+    <input id="loginName" type="text" placeholder="Login (ism)" autocomplete="off">
+    <input id="loginPass" type="password" placeholder="Parol" autocomplete="off">
+    <button class="btn" id="btnLogin">Kirish</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ============ ADMIN APP ============ -->
+<div id="adminApp">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">🛠️ Admin Panel</div>
+      <div class="nav-link active" data-page="dashboard">📊 Statistika</div>
+      <div class="nav-link" data-page="users">👤 Foydalanuvchilar</div>
+      <div class="nav-link" data-page="ads">📢 Reklamalar</div>
+      <div class="nav-link" data-page="tournaments">🏆 Turnirlar</div>
+      <div class="nav-link" data-page="channels">📢 Majburiy kanallar</div>
+      <div class="nav-link" data-page="settings">⚙️ Sozlamalar</div>
+      <div style="height:1px;background:var(--border);margin:14px 0;"></div>
+      <div class="nav-link" id="btnLogout">🚪 Chiqish</div>
+    </aside>
+
+    <div class="content">
+      <button class="menu-toggle" id="menuToggle">☰ Menyu</button>
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <h1>📊 Statistika</h1>
+        <div class="kpi-grid">
+          <div class="kpi"><div class="label">Jami foydalanuvchilar</div><div class="value" id="kpiTotalUsers">-</div></div>
+          <div class="kpi"><div class="label">30 kunlik faol</div><div class="value" id="kpiActive30">-</div></div>
+          <div class="kpi"><div class="label">Jami o'ynalgan soat</div><div class="value" id="kpiTotalHours">-</div></div>
+          <div class="kpi"><div class="label">Komissiya foydasi</div><div class="value" id="kpiCommission">-</div></div>
+          <div class="kpi"><div class="label">Jami Stars balans</div><div class="value" id="kpiTotalStars">-</div></div>
+          <div class="kpi"><div class="label">Bloklangan foydalanuvchilar</div><div class="value" id="kpiBanned">-</div></div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">📅 Oxirgi 7 kun</h3>
+          <table>
+            <thead><tr><th>Sana</th><th>Yangi a'zolar</th><th>To'lovlar</th><th>O'yinlar</th><th>O'ynalgan (daq)</th></tr></thead>
+            <tbody id="weeklyStatsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">⏱ Eng ko'p o'ynagan foydalanuvchilar</h3>
+          <table>
+            <thead><tr><th>Foydalanuvchi</th><th>ID</th><th>O'ynalgan vaqt</th><th>G/M/D</th></tr></thead>
+            <tbody id="topPlayersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USERS -->
+      <div class="page" id="page-users">
+        <h1>👤 Foydalanuvchilar</h1>
+        <div class="card">
+          <input class="searchbar" id="userSearch" placeholder="🔍 Ism, username yoki ID bo'yicha qidirish...">
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>Foydalanuvchi</th><th>ID</th><th>⭐️ Stars</th><th>🪙 Coins</th><th>💵 Naqd</th>
+              <th>Holat</th><th>Amallar</th>
+            </tr></thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ADS -->
+      <div class="page" id="page-ads">
+        <h1>📢 Reklamalar</h1>
+        <div class="card">
+          <h3 style="margin-top:0;">➕ Yangi reklama qo'shish</h3>
+          <div class="form-grid">
+            <select id="adType">
+              <option value="text">📝 Matn</option>
+              <option value="image">🖼 Rasm (URL)</option>
+              <option value="video">🎬 Video (URL)</option>
+            </select>
+            <select id="adFrequency">
+              <option value="daily">Kuniga limit</option>
+              <option value="once">Faqat bir marta (umrbod)</option>
+              <option value="every_entry">Har kirishda</option>
+            </select>
+          </div>
+          <input id="adTitle" placeholder="Sarlavha (ixtiyoriy)">
+          <textarea id="adContentInput" placeholder="Matn kontenti yoki rasm/video URL manzili" rows="3" style="width:100%;margin:8px 0;"></textarea>
+          <div class="form-grid">
+            <input id="adDuration" type="number" placeholder="Necha soniya ko'rsatiladi (masalan: 10)" min="1">
+            <input id="adMaxShows" type="number" placeholder="Necha marta ko'rsatiladi (masalan: 1)" min="1">
+          </div>
+          <button class="btn green" id="btnAddAd" style="margin-top:10px;">➕ Reklama qo'shish</button>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0;">📋 Faol reklamalar</h3>
+          <div id="adsList"><p class="muted">Yuklanmoqda...</p></div>
+        </div>
+      </div>
+
+      <!-- TOURNAMENTS -->
+      <div class="page" id="page-tournaments">
+        <h1>🏆 Turnirlar</h1>
+        <div class="card" style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Nomi</th><th>O'yin</th><th>Holat</th><th>Ishtirokchilar</th><th>Komissiya</th><th>Yaratilgan</th></tr></thead>
+            <tbody id="tournamentsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CHANNELS -->
+      <div class="page" id="page-channels">
+        <h1>📢 Majburiy kanallar</h1>
+        <div class="card">
+          <p class="muted">Kanal qo'shish/o'chirish operatsiyalari xavfsizlik uchun Telegram bot orqali
+          (<code>/admin</code> → 📢 Majburiy kanallar) amalga oshiriladi. Bu yerda faqat ro'yxatni ko'rish mumkin.</p>
+        </div>
+        <div class="card" id="channelsList"><p class="muted">Yuklanmoqda...</p></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <h1>⚙️ Sozlamalar</h1>
+        <div class="card">
+          <h3 style="margin-top:0;">Komissiya foizi</h3>
+          <p class="muted">Turnirlardan olinadigan komissiya foizi (hostFee) WebApp tomonida turnir yaratilganda belgilanadi. Bu yerda umumiy default qiymatni saqlashingiz mumkin.</p>
+          <div class="flex">
+            <input id="commissionPercent" type="number" placeholder="Masalan: 10" style="max-width:160px;">
+            <button class="btn small green" id="btnSaveCommission">Saqlash</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Balance edit modal -->
+<div class="modal-bg" id="balanceModalBg">
+  <div class="modal">
+    <h3 id="balanceModalTitle">Balansni o'zgartirish</h3>
+    <input type="hidden" id="balanceModalUserId">
+    <select id="balanceModalCurrency" style="width:100%;margin-bottom:8px;">
+      <option value="stars">⭐️ Stars</option>
+      <option value="cash_balance">💵 Naqd</option>
+      <option value="coins">🪙 Coins</option>
+    </select>
+    <select id="balanceModalAction" style="width:100%;margin-bottom:8px;">
+      <option value="add">➕ Qo'shish</option>
+      <option value="sub">➖ Ayirish</option>
+    </select>
+    <input id="balanceModalAmount" type="number" placeholder="Miqdor" style="width:100%;">
+    <div class="flex" style="margin-top:14px;">
+      <button class="btn green" id="btnConfirmBalance">Tasdiqlash</button>
+      <button class="btn secondary" id="btnCancelBalance">Bekor qilish</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+/* ===================== FIREBASE — BIR MARTA, IKKALA QISM UCHUN UMUMIY ===================== */
+const __FIREBASE_CONFIG__ = {
+  apiKey: "AIzaSyBY2You1GaWeAhhJY0UMaLLz5k0h8C5QWQ",
+  authDomain: "shashka-84b3f.firebaseapp.com",
+  databaseURL: "https://shashka-84b3f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "shashka-84b3f",
+  storageBucket: "shashka-84b3f.appspot.com",
+  messagingSenderId: "210756527407",
+  appId: "1:210756527407:web:07ed7ce2264553015eadda"
+};
+firebase.initializeApp(__FIREBASE_CONFIG__);
+window.__sharedDb = firebase.database();
+
+/* ===================== O'YINCHI (PLAYER) SKRIPTI — o'z nomlar maydonida ===================== */
+(function(){
+
+/* =====================================================================
+   SOZLAMALAR - o'zingizning muhitingizga moslang
+===================================================================== */
+const CONFIG = {
+  firebase: {
+    apiKey: "AIzaSyBY2You1GaWeAhhJY0UMaLLz5k0h8C5QWQ",
+    authDomain: "shashka-84b3f.firebaseapp.com",
+    databaseURL: "https://shashka-84b3f-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "shashka-84b3f",
+    storageBucket: "shashka-84b3f.appspot.com",
+    messagingSenderId: "210756527407",
+    appId: "1:210756527407:web:07ed7ce2264553015eadda"
+  },
+  // Bot ichki API manzili (webapp_api.py). Deploy qilingandan so'ng shu yerni to'g'irlang.
+  BOT_API_BASE: "https://your-bot-domain.example",
+  INTERNAL_API_SECRET: "change_me_internal_secret",
+  BOT_USERNAME: "your_bot_username"
+};
+
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+const db = window.__sharedDb;
+
+let currentUser = null;   // Telegram user obyekti
+let userProfile = null;   // Firebase'dagi profil
+let playStartTs = Date.now();
+
+function tgId(){ return currentUser?.id; }
+
+function toast(msg){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2600);
+}
+
+async function apiCall(path, body){
+  const res = await fetch(CONFIG.BOT_API_BASE + path, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json', 'X-Internal-Secret': CONFIG.INTERNAL_API_SECRET},
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+/* ================= LOGIN / OTP ================= */
+function initTelegramUser(){
+  if (tg?.initDataUnsafe?.user) {
+    currentUser = tg.initDataUnsafe.user;
+  } else {
+    // Fallback - brauzerda test qilish uchun (ishlab chiqarishda bu ishlamaydi)
+    currentUser = { id: 0, first_name: "Test", username: "test_user" };
+  }
+  document.getElementById('tgUserPreview').innerHTML =
+    `<div style="font-size:28px;">👤</div><div><b>${currentUser.first_name||''}</b><div class="muted">@${currentUser.username||'-'}</div></div>`;
+}
+
+document.getElementById('btnRequestOtp').onclick = async () => {
+  const btn = document.getElementById('btnRequestOtp');
+  btn.disabled = true; btn.textContent = "⏳ Yuborilmoqda...";
+  try {
+    const r = await apiCall('/api/request-otp', { init_data: tg?.initData || "", user_id: currentUser.id });
+    if (r.ok) {
+      document.getElementById('loginStep1').classList.add('hidden');
+      document.getElementById('loginStep2').classList.remove('hidden');
+      toast("✅ Kod Telegramingizga yuborildi");
+    } else {
+      toast("❌ " + (r.error || "Xatolik yuz berdi"));
+    }
+  } catch(e){ toast("❌ Server bilan bog'lanib bo'lmadi"); }
+  btn.disabled = false; btn.textContent = "📩 Kirish kodini yuborish";
+};
+document.getElementById('btnResendOtp').onclick = () => document.getElementById('btnRequestOtp').click();
+
+const otpDigits = document.querySelectorAll('.otp-d');
+otpDigits.forEach((inp, idx) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/\D/g,'');
+    if (inp.value && idx < otpDigits.length-1) otpDigits[idx+1].focus();
+  });
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !inp.value && idx>0) otpDigits[idx-1].focus();
+  });
+});
+
+document.getElementById('btnVerifyOtp').onclick = async () => {
+  const code = Array.from(otpDigits).map(i=>i.value).join('');
+  if (code.length !== 5) { toast("❗️ 5 xonali kodni to'liq kiriting"); return; }
+  const r = await apiCall('/api/verify-otp', { user_id: currentUser.id, code });
+  if (r.ok) {
+    toast("✅ Muvaffaqiyatli kirdingiz!");
+    await loadProfileAndEnter();
+  } else {
+    toast("❌ " + (r.message || "Kod noto'g'ri"));
+  }
+};
+
+/* ================= PROFIL YUKLASH ================= */
+async function loadProfileAndEnter(){
+  const snap = await db.ref('users/' + tgId()).once('value');
+  userProfile = snap.val() || {
+    stars:0, coins:0, cash_balance:0, wins:0, losses:0, draws:0,
+    referrals_count:0, total_play_seconds:0
+  };
+  renderProfile();
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  listenLiveBalance();
+  loadTournaments();
+  maybeShowAd();
+}
+
+function listenLiveBalance(){
+  db.ref('users/' + tgId()).on('value', snap => {
+    userProfile = snap.val() || userProfile;
+    renderProfile();
+  });
+}
+
+function renderProfile(){
+  if (!userProfile) return;
+  document.getElementById('hdrStars').textContent = userProfile.stars ?? 0;
+  document.getElementById('hdrCoins').textContent = userProfile.coins ?? 0;
+  document.getElementById('welcomeName').textContent = currentUser.first_name || 'O\'yinchi';
+  document.getElementById('profName').textContent = currentUser.first_name || '';
+  document.getElementById('profUsername').textContent = '@' + (currentUser.username || '-');
+  document.getElementById('balStars').textContent = userProfile.stars ?? 0;
+  document.getElementById('balCoins').textContent = userProfile.coins ?? 0;
+  document.getElementById('balCash').textContent = (userProfile.cash_balance ?? 0) + " so'm";
+  document.getElementById('statWins').textContent = userProfile.wins ?? 0;
+  document.getElementById('statLosses').textContent = userProfile.losses ?? 0;
+  document.getElementById('statDraws').textContent = userProfile.draws ?? 0;
+  document.getElementById('statTime').textContent = Math.floor((userProfile.total_play_seconds ?? 0)/60) + " daq";
+  document.getElementById('refCount').textContent = userProfile.referrals_count ?? 0;
+  document.getElementById('refLink').value = `https://t.me/${CONFIG.BOT_USERNAME}?start=ref${tgId()}`;
+}
+
+document.getElementById('btnCopyRef').onclick = () => {
+  const el = document.getElementById('refLink');
+  el.select(); document.execCommand('copy');
+  toast("📋 Havola nusxalandi");
+};
+document.getElementById('btnGoTopup').onclick = () => switchTab('topup');
+document.getElementById('btnOpenBotTopup').onclick = () => {
+  tg?.openTelegramLink?.(`https://t.me/${CONFIG.BOT_USERNAME}`);
+};
+
+/* ================= NAVIGATSIYA ================= */
+function switchTab(name){
+  document.querySelectorAll('.tabpane').forEach(el => el.classList.add('hidden'));
+  const target = document.getElementById('tab-' + name);
+  if (target) target.classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navBtn = document.querySelector(`.nav-item[data-tab="${name}"]`);
+  if (navBtn) navBtn.classList.add('active');
+}
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => switchTab(el.dataset.tab));
+});
+document.querySelectorAll('.game-tile').forEach(el => {
+  el.addEventListener('click', () => {
+    if (el.dataset.soon) { toast("🚧 Bu o'yin asosiy React ilovangizda to'liq mavjud"); return; }
+    switchTab(el.dataset.game);
+    if (el.dataset.game === 'shashka') initShashka();
+    if (el.dataset.game === 'xo') initXo();
+  });
+});
+
+/* ================= TURNIRLAR (Firebase'dan real-time) ================= */
+function loadTournaments(){
+  db.ref('tournaments').limitToLast(5).on('value', snap => {
+    const val = snap.val();
+    const el = document.getElementById('tournamentsList');
+    if (!val) { el.innerHTML = '<p class="muted">Hozircha faol turnirlar yo\'q</p>'; return; }
+    const list = Object.values(val).filter(t => t.status === 'open' || t.status === 'in_progress');
+    if (!list.length) { el.innerHTML = '<p class="muted">Hozircha faol turnirlar yo\'q</p>'; return; }
+    el.innerHTML = list.map(t => `
+      <div class="row">
+        <span>🏆 ${t.title || 'Turnir'} (${t.game})</span>
+        <b>${(t.registeredPlayers?.length)||0}/${t.maxPlayers}</b>
+      </div>`).join('');
+  });
+}
+
+/* ================= REKLAMA TIZIMI ================= */
+async function maybeShowAd(){
+  try {
+    const snap = await db.ref('ads').once('value');
+    const ads = snap.val();
+    if (!ads) return;
+    const activeAds = Object.entries(ads).filter(([_,a]) => a.active);
+    if (!activeAds.length) return;
+
+    for (const [adId, ad] of activeAds) {
+      const impSnap = await db.ref(`ad_impressions/${adId}/${tgId()}`).once('value');
+      const imp = impSnap.val() || { count: 0, last_shown_date: '' };
+      const today = new Date().toISOString().slice(0,10);
+
+      let allowed = false;
+      if (ad.frequency === 'once') allowed = imp.count < ad.max_shows_per_user;
+      else if (ad.frequency === 'every_entry') allowed = true;
+      else allowed = imp.last_shown_date !== today || imp.count < ad.max_shows_per_user;
+
+      if (allowed) {
+        showAd(ad, adId, imp, today);
+        break; // bir kirishda faqat bitta reklama
+      }
+    }
+  } catch(e){ console.warn("Ad load error", e); }
+}
+
+function showAd(ad, adId, imp, today){
+  const overlay = document.getElementById('adOverlay');
+  const content = document.getElementById('adContent');
+  const timerEl = document.getElementById('adTimer');
+  let contentHtml = '';
+  if (ad.type === 'text') contentHtml = `<h2 style="max-width:320px;">${ad.title||''}</h2><p>${ad.content}</p>`;
+  if (ad.type === 'image') contentHtml = `<img src="${ad.content}"><h3>${ad.title||''}</h3>`;
+  if (ad.type === 'video') contentHtml = `<video src="${ad.content}" autoplay muted playsinline></video><h3>${ad.title||''}</h3>`;
+  content.innerHTML = contentHtml;
+  overlay.classList.remove('hidden');
+
+  let remaining = ad.duration_seconds || 5;
+  timerEl.textContent = remaining;
+  const interval = setInterval(() => {
+    remaining--;
+    timerEl.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      overlay.classList.add('hidden');
+    }
+  }, 1000);
+
+  const newCount = (imp.last_shown_date === today ? imp.count : 0) + 1;
+  db.ref(`ad_impressions/${adId}/${tgId()}`).set({ count: newCount, last_shown_date: today });
+}
+
+/* ================= SHASHKA (CHECKERS) ================= */
+let shashkaState, shashkaSelected = null, shashkaTurn = 1;
+function initShashka(){
+  shashkaState = Array(8).fill(null).map(()=>Array(8).fill(0));
+  for (let r=0;r<3;r++) for (let c=0;c<8;c++) if ((r+c)%2===1) shashkaState[r][c] = 2;
+  for (let r=5;r<8;r++) for (let c=0;c<8;c++) if ((r+c)%2===1) shashkaState[r][c] = 1;
+  shashkaTurn = 1; shashkaSelected = null;
+  renderShashka();
+}
+function renderShashka(){
+  const board = document.getElementById('shashkaBoard');
+  board.innerHTML = '';
+  document.getElementById('shashkaTurn').textContent = shashkaTurn===1 ? "Oq navbati ⚪️" : "Qora navbati ⚫️";
+  for (let r=0;r<8;r++){
+    for (let c=0;c<8;c++){
+      const cell = document.createElement('div');
+      cell.className = 'cell ' + ((r+c)%2===0 ? 'light':'dark');
+      cell.dataset.r=r; cell.dataset.c=c;
+      const val = shashkaState[r][c];
+      if (val !== 0){
+        const piece = document.createElement('div');
+        piece.className = 'piece ' + (val===1||val===3 ? 'p1':'p2') + ((val===3||val===4)?' king':'');
+        cell.appendChild(piece);
+      }
+      if (shashkaSelected && shashkaSelected.r==r && shashkaSelected.c==c) cell.classList.add('selected');
+      if (shashkaSelected && isLegalMove(shashkaSelected.r, shashkaSelected.c, r, c)) cell.classList.add('hint');
+      cell.onclick = () => onShashkaCellClick(r,c);
+      board.appendChild(cell);
+    }
+  }
+}
+function isOwn(val){ return shashkaTurn===1 ? (val===1||val===3) : (val===2||val===4); }
+function isEnemy(val){ return shashkaTurn===1 ? (val===2||val===4) : (val===1||val===3); }
+function isLegalMove(fr,fc,tr,tc){
+  if (shashkaState[tr]?.[tc] !== 0) return false;
+  const val = shashkaState[fr][fc];
+  const isKing = val===3||val===4;
+  const dr = tr-fr, dc = tc-fc;
+  if (Math.abs(dr)!==Math.abs(dc)) return false;
+  const dir = shashkaTurn===1 ? -1 : 1;
+  if (!isKing && Math.abs(dr)===1 && dr===dir) return true; // oddiy yurish
+  if (Math.abs(dr)===2){ // yeb ketish
+    const mr = fr+dr/2, mc = fc+dc/2;
+    if (isEnemy(shashkaState[mr]?.[mc])) return true;
+  }
+  if (isKing && Math.abs(dr)>=1){
+    // sodda: king istalgan masofaga, agar yo'lida to'siq bo'lmasa
+    const stepR = dr>0?1:-1, stepC=dc>0?1:-1;
+    let enemyCount=0, r=fr+stepR,c=fc+stepC;
+    while (r!==tr){
+      if (shashkaState[r][c]!==0){ if (isEnemy(shashkaState[r][c])) enemyCount++; else return false; }
+      r+=stepR; c+=stepC;
+    }
+    return enemyCount<=1;
+  }
+  return false;
+}
+function onShashkaCellClick(r,c){
+  const val = shashkaState[r][c];
+  if (shashkaSelected){
+    if (isLegalMove(shashkaSelected.r, shashkaSelected.c, r, c)){
+      const fr=shashkaSelected.r, fc=shashkaSelected.c;
+      const dr=r-fr, dc=c-fc;
+      shashkaState[r][c] = shashkaState[fr][fc];
+      shashkaState[fr][fc] = 0;
+      if (Math.abs(dr)===2){
+        const mr=fr+dr/2, mc=fc+dc/2;
+        shashkaState[mr][mc]=0;
+      } else if (Math.abs(dr)>1){
+        const stepR=dr>0?1:-1, stepC=dc>0?1:-1;
+        let rr=fr+stepR, cc=fc+stepC;
+        while(rr!==r){ shashkaState[rr][cc]=0; rr+=stepR; cc+=stepC; }
+      }
+      if ((shashkaTurn===1 && r===0) || (shashkaTurn===2 && r===7)) shashkaState[r][c] += 2; // kingga aylanish
+      shashkaTurn = shashkaTurn===1?2:1;
+      shashkaSelected = null;
+      checkShashkaWin();
+    } else { shashkaSelected = isOwn(val) ? {r,c} : null; }
+  } else if (isOwn(val)) { shashkaSelected = {r,c}; }
+  renderShashka();
+}
+function checkShashkaWin(){
+  let p1=0,p2=0;
+  for(const row of shashkaState) for(const v of row){ if(v===1||v===3)p1++; if(v===2||v===4)p2++; }
+  if (p1===0) toast("🏆 Qora g'alaba qozondi!");
+  if (p2===0) toast("🏆 Oq g'alaba qozondi!");
+}
+document.getElementById('btnShashkaReset').onclick = initShashka;
+
+/* ================= XO (TIC TAC TOE) - botga qarshi ================= */
+let xoBoard, xoTurn;
+function initXo(){
+  xoBoard = Array(9).fill('');
+  xoTurn = 'X';
+  renderXo();
+}
+function renderXo(){
+  const board = document.getElementById('xoBoard');
+  board.innerHTML = '';
+  document.getElementById('xoTurn').textContent = xoTurn + " navbati";
+  xoBoard.forEach((v, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'xo-cell';
+    cell.textContent = v;
+    cell.onclick = () => onXoClick(i);
+    board.appendChild(cell);
+  });
+}
+function onXoClick(i){
+  if (xoBoard[i] || xoTurn!=='X') return;
+  xoBoard[i]='X';
+  if (checkXoWin('X')) { renderXo(); toast("🎉 Siz g'alaba qozondingiz!"); return; }
+  if (xoBoard.every(v=>v)) { renderXo(); toast("🤝 Durang!"); return; }
+  xoTurn='O'; renderXo();
+  setTimeout(()=>{
+    const empty = xoBoard.map((v,idx)=>v?null:idx).filter(v=>v!==null);
+    const move = empty[Math.floor(Math.random()*empty.length)];
+    xoBoard[move]='O';
+    if (checkXoWin('O')) { renderXo(); toast("😔 Bot g'alaba qozondi"); return; }
+    if (xoBoard.every(v=>v)) { renderXo(); toast("🤝 Durang!"); return; }
+    xoTurn='X'; renderXo();
+  }, 500);
+}
+function checkXoWin(p){
+  const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  return lines.some(l => l.every(i => xoBoard[i]===p));
+}
+document.getElementById('btnXoReset').onclick = initXo;
+
+/* ================= RPS (TOSH-QOG'OZ-QAYCHI) ================= */
+let rpsWins=0, rpsLosses=0;
+document.querySelectorAll('.rps-choices button').forEach(btn => {
+  btn.onclick = () => {
+    const choices=['rock','paper','scissors'];
+    const emojis={rock:'✊',paper:'✋',scissors:'✌️'};
+    const user = btn.dataset.c;
+    const bot = choices[Math.floor(Math.random()*3)];
+    let result;
+    if (user===bot) result='draw';
+    else if ((user==='rock'&&bot==='scissors')||(user==='paper'&&bot==='rock')||(user==='scissors'&&bot==='paper')) result='win';
+    else result='lose';
+    if (result==='win'){ rpsWins++; document.getElementById('rpsWins').textContent=rpsWins; }
+    if (result==='lose'){ rpsLosses++; document.getElementById('rpsLosses').textContent=rpsLosses; }
+    const label = result==='win'?'🎉 Siz yutdingiz!':result==='lose'?'😔 Bot yutdi':'🤝 Durang!';
+    document.getElementById('rpsResult').textContent = `Siz: ${emojis[user]}  Bot: ${emojis[bot]}  —  ${label}`;
+  };
+});
+
+/* ================= O'YNALGAN VAQTNI KUZATISH ================= */
+window.addEventListener('beforeunload', () => {
+  const seconds = Math.floor((Date.now()-playStartTs)/1000);
+  if (seconds > 3 && tgId()) {
+    navigator.sendBeacon?.(CONFIG.BOT_API_BASE + '/api/track-play',
+      JSON.stringify({user_id: tgId(), seconds}));
+  }
+});
+
+/* ================= INIT ================= */
+initTelegramUser();
+
+})();
+</script>
+
+<script>
+/* ===================== ADMIN PANEL SKRIPTI — o'z nomlar maydonida ===================== */
+(function(){
+
+/* ================= SOZLAMALAR ================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBY2You1GaWeAhhJY0UMaLLz5k0h8C5QWQ",
+  authDomain: "shashka-84b3f.firebaseapp.com",
+  databaseURL: "https://shashka-84b3f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "shashka-84b3f",
+  storageBucket: "shashka-84b3f.appspot.com",
+  messagingSenderId: "210756527407",
+  appId: "1:210756527407:web:07ed7ce2264553015eadda"
+};
+// Admin panelga kirish uchun login/parol.
+// So'ralganidek: Login (ism) maydoniga "20120517" yozilsa kirish beriladi.
+const ADMIN_LOGIN = "20120517";
+const ADMIN_PASS = "20120517";
+
+const db = window.__sharedDb;
+
+let allUsersCache = {};
+
+/* ================= LOGIN ================= */
+document.getElementById('btnLogin').onclick = () => {
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  if (name === ADMIN_LOGIN && pass === ADMIN_PASS) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'block';
+    sessionStorage.setItem('admin_logged_in', '1');
+    bootAdmin();
+  } else {
+    document.getElementById('loginErr').textContent = "❌ Login yoki parol noto'g'ri";
+  }
+};
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('btnLogin').click(); });
+
+document.getElementById('btnLogout').onclick = () => {
+  sessionStorage.removeItem('admin_logged_in');
+  location.reload();
+};
+
+if (sessionStorage.getItem('admin_logged_in') === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'block';
+  bootAdmin();
+}
+
+/* ================= NAVIGATSIYA ================= */
+document.querySelectorAll('.nav-link[data-page]').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + el.dataset.page).classList.add('active');
+    document.getElementById('sidebar').classList.remove('open');
+  });
+});
+document.getElementById('menuToggle').onclick = () => document.getElementById('sidebar').classList.toggle('open');
+
+/* ================= BOOT ================= */
+function bootAdmin(){
+  loadDashboard();
+  loadUsers();
+  loadAds();
+  loadTournaments();
+  loadChannels();
+}
+
+/* ================= DASHBOARD ================= */
+async function loadDashboard(){
+  const usersSnap = await db.ref('users').once('value');
+  const users = usersSnap.val() || {};
+  allUsersCache = users;
+  const userList = Object.entries(users);
+
+  document.getElementById('kpiTotalUsers').textContent = userList.length;
+
+  const now = Math.floor(Date.now()/1000);
+  const cutoff30 = now - 30*86400;
+  const active30 = userList.filter(([_,u]) => (u.last_active_at||0) >= cutoff30).length;
+  document.getElementById('kpiActive30').textContent = active30;
+
+  const banned = userList.filter(([_,u]) => u.is_banned).length;
+  document.getElementById('kpiBanned').textContent = banned;
+
+  let totalSeconds = 0, totalStars = 0;
+  userList.forEach(([_,u]) => { totalSeconds += (u.total_play_seconds||0); totalStars += (u.stars||0); });
+  document.getElementById('kpiTotalHours').textContent = (totalSeconds/3600).toFixed(1) + " soat";
+  document.getElementById('kpiTotalStars').textContent = totalStars;
+
+  // Komissiya: turnirlardagi hostFee yig'indisi (finished/in_progress turnirlar)
+  const tSnap = await db.ref('tournaments').once('value');
+  const tournaments = tSnap.val() || {};
+  let commission = 0;
+  Object.values(tournaments).forEach(t => { commission += (t.hostFee || 0); });
+  document.getElementById('kpiCommission').textContent = commission.toFixed(0);
+
+  // Haftalik statistika
+  const statsSnap = await db.ref('stats/daily').once('value');
+  const stats = statsSnap.val() || {};
+  const tbody = document.getElementById('weeklyStatsBody');
+  tbody.innerHTML = '';
+  const days = [];
+  for (let i=6;i>=0;i--){
+    const d = new Date(Date.now() - i*86400000);
+    days.push(d.toISOString().slice(0,10));
+  }
+  days.forEach(day => {
+    const d = stats[day] || {};
+    tbody.innerHTML += `<tr><td>${day}</td><td>${d.new_users||0}</td><td>${d.payments_count||0}</td>
+      <td>${d.games_played||0}</td><td>${Math.round((d.play_seconds||0)/60)}</td></tr>`;
+  });
+
+  // Top players by play time
+  const top = userList
+    .sort((a,b) => (b[1].total_play_seconds||0) - (a[1].total_play_seconds||0))
+    .slice(0, 10);
+  const topBody = document.getElementById('topPlayersBody');
+  topBody.innerHTML = top.map(([id,u]) => `
+    <tr><td>${u.first_name||'-'} (@${u.username||'-'})</td><td>${id}</td>
+    <td>${Math.round((u.total_play_seconds||0)/60)} daq</td>
+    <td>${u.wins||0}/${u.losses||0}/${u.draws||0}</td></tr>`).join('');
+}
+
+/* ================= USERS ================= */
+function loadUsers(){
+  db.ref('users').on('value', snap => {
+    allUsersCache = snap.val() || {};
+    renderUsers();
+  });
+}
+function renderUsers(filter=''){
+  const tbody = document.getElementById('usersBody');
+  const entries = Object.entries(allUsersCache).filter(([id,u]) => {
+    if (!filter) return true;
+    const f = filter.toLowerCase();
+    return id.includes(f) || (u.first_name||'').toLowerCase().includes(f) || (u.username||'').toLowerCase().includes(f);
+  });
+  tbody.innerHTML = entries.map(([id,u]) => `
+    <tr>
+      <td>${u.first_name||'-'}<br><span class="muted">@${u.username||'-'}</span></td>
+      <td>${id}</td>
+      <td>${u.stars||0}</td>
+      <td>${u.coins||0}</td>
+      <td>${u.cash_balance||0}</td>
+      <td>${u.is_banned ? '<span class="badge no">Bloklangan</span>' : '<span class="badge ok">Faol</span>'}</td>
+      <td>
+        <div class="flex">
+          <button class="btn small green" onclick="openBalanceModal('${id}')">💰 Balans</button>
+          <button class="btn small ${u.is_banned?'secondary':'danger'}" onclick="toggleBan('${id}', ${!u.is_banned})">
+            ${u.is_banned ? '✅ Blokdan chiqarish' : '🚫 Bloklash'}
+          </button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" class="muted">Foydalanuvchi topilmadi</td></tr>';
+}
+document.getElementById('userSearch').addEventListener('input', e => renderUsers(e.target.value));
+
+async function toggleBan(userId, banned){
+  await db.ref('users/' + userId + '/is_banned').set(banned);
+}
+
+/* Balance modal */
+function openBalanceModal(userId){
+  document.getElementById('balanceModalUserId').value = userId;
+  document.getElementById('balanceModalAmount').value = '';
+  document.getElementById('balanceModalBg').classList.add('active');
+}
+document.getElementById('btnCancelBalance').onclick = () => document.getElementById('balanceModalBg').classList.remove('active');
+document.getElementById('btnConfirmBalance').onclick = async () => {
+  const userId = document.getElementById('balanceModalUserId').value;
+  const currency = document.getElementById('balanceModalCurrency').value;
+  const action = document.getElementById('balanceModalAction').value;
+  const amount = parseFloat(document.getElementById('balanceModalAmount').value || '0');
+  if (!amount || amount <= 0) { alert("Iltimos, to'g'ri miqdor kiriting"); return; }
+
+  const ref = db.ref(`users/${userId}/${currency}`);
+  const snap = await ref.once('value');
+  const current = snap.val() || 0;
+  const delta = action === 'add' ? amount : -amount;
+  const newVal = Math.max(0, current + delta);
+  await ref.set(newVal);
+
+  // Tranzaksiya yozuvi
+  await db.ref(`payments/${userId}`).push({
+    user_id: userId, currency, amount: delta, balance_after: newVal,
+    reason: 'admin_panel_' + action, type: 'admin_transfer',
+    admin_id: 'html_admin_panel', created_at: Math.floor(Date.now()/1000)
+  });
+
+  document.getElementById('balanceModalBg').classList.remove('active');
+  alert("✅ Balans yangilandi. Foydalanuvchiga bot orqali xabar avtomatik yuboriladi (agar bot ishga tushirilgan bo'lsa).");
+};
+
+/* ================= ADS ================= */
+document.getElementById('btnAddAd').onclick = async () => {
+  const type = document.getElementById('adType').value;
+  const frequency = document.getElementById('adFrequency').value;
+  const title = document.getElementById('adTitle').value.trim();
+  const content = document.getElementById('adContentInput').value.trim();
+  const duration = parseInt(document.getElementById('adDuration').value || '0');
+  const maxShows = parseInt(document.getElementById('adMaxShows').value || '0');
+
+  if (!content || !duration || !maxShows) {
+    alert("Iltimos, barcha maydonlarni to'ldiring (kontent, soniya, marta soni)");
+    return;
+  }
+
+  await db.ref('ads').push({
+    type, title, content, frequency,
+    duration_seconds: duration,
+    max_shows_per_user: maxShows,
+    active: true,
+    created_at: Math.floor(Date.now()/1000)
+  });
+
+  document.getElementById('adTitle').value = '';
+  document.getElementById('adContentInput').value = '';
+  document.getElementById('adDuration').value = '';
+  document.getElementById('adMaxShows').value = '';
+  alert("✅ Reklama qo'shildi");
+};
+
+function loadAds(){
+  db.ref('ads').on('value', snap => {
+    const ads = snap.val() || {};
+    const el = document.getElementById('adsList');
+    const entries = Object.entries(ads);
+    if (!entries.length) { el.innerHTML = '<p class="muted">Hozircha reklamalar yo\'q</p>'; return; }
+    const typeLabel = {text:'📝 Matn', image:'🖼 Rasm', video:'🎬 Video'};
+    const freqLabel = {daily:'Kunlik limit', once:'Bir marta', every_entry:'Har kirishda'};
+    el.innerHTML = entries.map(([id,a]) => `
+      <div class="ad-item">
+        <div>
+          <b>${typeLabel[a.type]||a.type}</b> ${a.title?'— '+a.title:''}<br>
+          <span class="muted">${a.duration_seconds}s ko'rsatiladi · ${a.max_shows_per_user} marta · ${freqLabel[a.frequency]||a.frequency}</span>
+        </div>
+        <div class="flex">
+          <span class="badge ${a.active?'ok':'no'}">${a.active?'Faol':'O\'chirilgan'}</span>
+          <button class="btn small secondary" onclick="toggleAd('${id}', ${!a.active})">${a.active?'⏸ To\'xtatish':'▶️ Yoqish'}</button>
+          <button class="btn small danger" onclick="deleteAd('${id}')">🗑</button>
+        </div>
+      </div>`).join('');
+  });
+}
+async function toggleAd(id, active){ await db.ref('ads/'+id+'/active').set(active); }
+async function deleteAd(id){
+  if (!confirm("Reklamani o'chirishni tasdiqlaysizmi?")) return;
+  await db.ref('ads/'+id).remove();
+  await db.ref('ad_impressions/'+id).remove();
+}
+
+/* ================= TOURNAMENTS ================= */
+function loadTournaments(){
+  db.ref('tournaments').on('value', snap => {
+    const tournaments = snap.val() || {};
+    const tbody = document.getElementById('tournamentsBody');
+    const statusLabel = {open:'🟢 Ochiq', in_progress:'🟡 Jarayonda', finished:'✅ Tugadi', cancelled:'❌ Bekor qilindi'};
+    tbody.innerHTML = Object.entries(tournaments).map(([id,t]) => `
+      <tr>
+        <td>${t.title||'-'}</td>
+        <td>${t.game||'-'}</td>
+        <td>${statusLabel[t.status]||t.status}</td>
+        <td>${(t.registeredPlayers?.length)||0}/${t.maxPlayers||'-'}</td>
+        <td>${t.hostFee||0}</td>
+        <td>${t.createdAt ? new Date(t.createdAt).toLocaleString() : '-'}</td>
+      </tr>`).join('') || '<tr><td colspan="6" class="muted">Turnirlar yo\'q</td></tr>';
+  });
+}
+
+/* ================= CHANNELS ================= */
+function loadChannels(){
+  db.ref('channels').on('value', snap => {
+    const channels = snap.val() || {};
+    const el = document.getElementById('channelsList');
+    const entries = Object.entries(channels);
+    if (!entries.length) { el.innerHTML = '<p class="muted">Kanallar yo\'q</p>'; return; }
+    el.innerHTML = entries.map(([id,c]) => `
+      <div class="ad-item">
+        <div>${c.type==='open'?'🔓':'🔒'} <b>${c.title||'-'}</b> <span class="muted">@${c.username||c.chat_id}</span></div>
+        <span class="badge ok">${c.type==='open'?'Ochiq':'Yopiq'}</span>
+      </div>`).join('');
+  });
+}
+
+/* ================= SETTINGS ================= */
+document.getElementById('btnSaveCommission').onclick = async () => {
+  const val = parseFloat(document.getElementById('commissionPercent').value || '0');
+  await db.ref('bot_settings/commission_percent').set(val);
+  alert('✅ Saqlandi');
+};
+db.ref('bot_settings/commission_percent').once('value').then(s => {
+  if (s.val()) document.getElementById('commissionPercent').value = s.val();
+});
+
+
+/* Dinamik onclick="" atributlari uchun funksiyalarni global (window) darajasiga chiqaramiz */
+window.openBalanceModal = openBalanceModal;
+window.toggleBan = toggleBan;
+window.toggleAd = toggleAd;
+window.deleteAd = deleteAd;
+
+})();
+</script>
+
+<script>
+/* ===================== ILOVA ALMASHTIRISH (routing) ===================== */
+function __applyRoute(){
+  const isAdmin = location.hash === '#admin';
+  document.getElementById('playerRoot').classList.toggle('app-hidden', isAdmin);
+  document.getElementById('adminRoot').classList.toggle('app-hidden', !isAdmin);
+  document.getElementById('adminEntryLink').style.display = isAdmin ? 'none' : 'block';
+}
+window.addEventListener('hashchange', __applyRoute);
+__applyRoute();
+</script>
+
+</body>
+</html>
